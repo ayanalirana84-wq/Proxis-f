@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Proxis - Futuristic Chat</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+
+  :root{
+    --bg: #0b0c17;
+    --card: rgba(10,12,30,0.8);
+    --primary: #00ffff;
+    --secondary: #ff00ff;
+    --ai-bubble: rgba(255,255,255,0.05);
+    --user-bubble: #00ffff;
+    --radius: 20px;
+    --glass: rgba(255,255,255,0.1);
+    --toast-bg: rgba(0,255,255,0.2);
+  }
+
+  *{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}
+  html,body{height:100%;margin:0;background:var(--bg);color:#fff; overflow:hidden;}
+  .app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+  header {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 16px; position:sticky; top:0; z-index:30;
+    background:var(--glass); backdrop-filter: blur(12px); border-bottom:1px solid rgba(255,255,255,0.1);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand img{height:40px;width:40px;border-radius:10px;object-fit:cover; filter: drop-shadow(0 0 8px #0ff);}
+  .brand .title{font-weight:700;font-size:1.2rem; text-shadow: 0 0 6px #0ff;}
+  .header-actions{display:flex;gap:8px;align-items:center;}
+  .btn {
+    background:rgba(255,255,255,0.05);border:1px solid #0ff;padding:8px 12px;border-radius:12px;font-weight:600;cursor:pointer;
+    color:#0ff; text-shadow:0 0 4px #0ff;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .btn:hover { transform: scale(1.05); background:rgba(0,255,255,0.1);}
+  .btn:active{transform:translateY(1px);}
+
+  #chat-box{flex:1; overflow:auto; padding:22px 18px 120px; -webkit-overflow-scrolling:touch;}
+  .list{display:flex; flex-direction:column; gap:12px; max-width:980px; margin:0 auto;}
+
+  @keyframes fadeSlideIn { 0%{opacity:0; transform:translateY(20px);} 100%{opacity:1; transform:translateY(0);} }
+  @keyframes bubblePop {0%{transform:scale(0.95);}50%{transform:scale(1.05);}100%{transform:scale(1);}}
+  @keyframes toastSlide {0%{opacity:0; transform:translate(-50%,20px);}100%{opacity:1; transform:translate(-50%,0);}}
+  @keyframes woopAnim {0%{transform: scale(1) rotate(0deg);}25%{transform: scale(1.2) rotate(-15deg);}50%{transform: scale(1) rotate(10deg);}75%{transform: scale(1.1) rotate(-5deg);}100%{transform: scale(1) rotate(0deg);}}
+  @keyframes moveBall {0%{transform: translateY(0);}50%{transform: translateY(-6px);}100%{transform: translateY(0);}}
+
+  .msg {
+    position:relative; padding:14px 16px; border-radius:var(--radius); max-width:80%;
+    word-break:break-word; line-height:1.5; box-shadow:0 0 16px rgba(0,255,255,0.2),0 6px 18px rgba(0,255,255,0.05);
+    user-select:text; animation:fadeSlideIn 0.35s ease forwards; transition:transform 0.12s ease, box-shadow 0.12s ease;
+    overflow:hidden;
+  }
+  .msg:hover{animation:bubblePop 0.25s ease;}
+  .msg.ai{align-self:flex-start;background:var(--ai-bubble); color:#fff; border-bottom-left-radius:12px; border:1px solid rgba(0,255,255,0.3);}
+  .msg.user{align-self:flex-end;background:var(--user-bubble); color:#000; border-bottom-right-radius:12px; text-shadow:0 0 2px #000;}
+
+  .typing-dots { display:flex; gap:4px; margin-left:4px; }
+  .typing-dots span { width:8px; height:8px; background:#0ff; border-radius:50%; display:inline-block; animation:moveBall 1s infinite; }
+  .typing-dots span:nth-child(2){ animation-delay:0.2s; }
+  .typing-dots span:nth-child(3){ animation-delay:0.4s; }
+
+  .composer {position:fixed; left:0; right:0; bottom:0; padding:12px 16px; background:var(--glass);
+    border-top:1px solid rgba(0,255,255,0.2); display:flex;align-items:center;gap:10px; z-index:40; backdrop-filter:blur(12px);}
+  .composer .input {flex:1; display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.05); padding:10px; border-radius:30px; border:1px solid #0ff;}
+  input[type="text"]{border:none;background:transparent;outline:none;font-size:1rem;padding:8px 6px;width:100%; color:#0ff;}
+
+  .send-btn{width:50px;height:50px;border-radius:50%;border:none;background:#0ff;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 0 16px #0ff, 0 6px 18px rgba(0,255,255,0.14); transition: transform .15s ease, box-shadow .15s ease;}
+  .send-btn:active{transform:scale(.98);}
+  .send-btn svg{width:22px;height:22px;fill:#000;}
+  .send-btn.woop { animation:woopAnim 0.3s ease forwards; }
+
+  .toast {position:fixed; left:50%; bottom:86px; transform:translateX(-50%); background:rgba(0,255,255,0.2); color:#0ff;
+    padding:8px 12px; border-radius:10px; font-weight:600; z-index:70; opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;}
+  .toast.show{opacity:1; pointer-events:auto; animation:toastSlide .3s ease forwards;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <img src="Image.jpg" alt="logo">
+      <div class="title">Proxis</div>
+    </div>
+    <div class="header-actions">
+      <button id="clear-btn" class="btn" title="Clear chat">Clear</button>
+    </div>
+  </header>
+
+  <main id="chat-box">
+    <div class="list" id="message-list" aria-live="polite"></div>
+  </main>
+
+  <div id="toast" class="toast" aria-hidden="true"></div>
+
+  <div class="composer">
+    <div class="input" role="form">
+      <input id="user-input" type="text" placeholder="Ask Proxis anything..." autocomplete="off" />
+    </div>
+    <button id="send-btn" class="send-btn" title="Send message">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+    </button>
+  </div>
+</div>
+
+<script type="module">
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+const API_KEY = "AIzaSyB73y0m9q0zeR5myCN1BxzFOVAtcowMOU0";
+const genAI = new GoogleGenerativeAI(API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+const SYSTEM_PROMPT = `You are Proxis, a Large Language Model by RonzDavil. Be friendly,natural and profesional. Give short,clear and easy to understant response. Tell only about you when needed or asked. When say to give detail tgen give detail.'`;
+
+const msgList = document.getElementById('message-list');
+const chatBox = document.getElementById('chat-box');
+const input = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const clearBtn = document.getElementById('clear-btn');
+const toast = document.getElementById('toast');
+
+let chatMemory = JSON.parse(localStorage.getItem('chatMemory') || '[]');
+let currentInterval = null; // reference for ongoing streaming
+
+function renderMessages() {
+  msgList.innerHTML = '';
+  chatMemory.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'msg ' + (m.sender === 'user' ? 'user' : 'ai');
+    el.dataset.id = m.id;
+
+    if(m.typing){
+      const dots = document.createElement('div');
+      dots.className = 'typing-dots';
+      for(let i=0;i<3;i++){
+        const span = document.createElement('span');
+        dots.appendChild(span);
+      }
+      el.appendChild(dots);
+    } else {
+      el.innerText = m.text;
+    }
+
+    msgList.appendChild(el);
+  });
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addMessage(text, sender) {
+  chatMemory.push({ text, sender, id: Date.now() });
+  localStorage.setItem('chatMemory', JSON.stringify(chatMemory));
+  renderMessages();
+}
+
+async function streamResponse(userText) {
+  // Stop previous streaming if any
+  if(currentInterval) { clearInterval(currentInterval); currentInterval = null; }
+
+  // Remove previous typing indicators
+  chatMemory = chatMemory.filter(m => !m.typing);
+
+  const typingId = 'typing-' + Date.now();
+  chatMemory.push({ sender:'ai', id:typingId, typing:true });
+  renderMessages();
+
+  sendBtn.classList.add('woop');
+  setTimeout(()=>sendBtn.classList.remove('woop'),300);
+
+  try {
+    const conversation = chatMemory.map(m=>`${m.sender==='user'?'User':'AI'}: ${m.text || ''}`).join('\n') + `\nUser: ${userText}`;
+    const result = await model.generateContent(SYSTEM_PROMPT + '\n\n' + conversation);
+    const text = result.response.text();
+
+    chatMemory = chatMemory.filter(m=>m.id!==typingId);
+    const aiMsg = { text:'', sender:'ai', id: Date.now() };
+    chatMemory.push(aiMsg);
+    renderMessages();
+
+    const aiEl = document.querySelector(`.msg[data-id='${aiMsg.id}']`);
+    let index = 0;
+    currentInterval = setInterval(()=>{
+      if(index < text.length){
+        aiMsg.text += text[index++];
+        aiEl.innerText = aiMsg.text;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      } else {
+        clearInterval(currentInterval);
+        currentInterval = null;
+        localStorage.setItem('chatMemory', JSON.stringify(chatMemory));
+      }
+    }, 25);
+
+  } catch(e) {
+    chatMemory = chatMemory.filter(m=>m.id!==typingId);
+    chatMemory.push({ text:'⚠️ Proxis encountered an error.', sender:'ai', id: Date.now() });
+    localStorage.setItem('chatMemory', JSON.stringify(chatMemory));
+    renderMessages();
+    console.error(e);
+  }
+}
+
+sendBtn.addEventListener('click', ()=>{
+  if(input.value.trim()){
+    addMessage(input.value.trim(),'user');
+    streamResponse(input.value.trim());
+    input.value='';
+  }
+});
+input.addEventListener('keydown', (e)=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendBtn.click();}});
+clearBtn.addEventListener('click', ()=>{chatMemory=[];localStorage.setItem('chatMemory', '[]');renderMessages(); showToast('Chat cleared');});
+
+function showToast(msg, ms=1300){toast.innerText=msg;toast.classList.add('show'); setTimeout(()=>{toast.classList.remove('show');}, ms);}
+renderMessages();
+</script>
+</body>
+</html>
