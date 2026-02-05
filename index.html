@@ -1,108 +1,195 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Proxis - Futuristic Chat</title>
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
 
-  :root{
-    --bg: #0b0c17;
-    --card: rgba(10,12,30,0.8);
-    --primary: #00ffff;
-    --secondary: #ff00ff;
-    --ai-bubble: rgba(255,255,255,0.05);
-    --user-bubble: #00ffff;
-    --radius: 20px;
-    --glass: rgba(255,255,255,0.1);
-    --toast-bg: rgba(0,255,255,0.2);
+:root{
+  --bg:#0b0c17;
+  --glass:rgba(255,255,255,.12);
+  --ai:rgba(255,255,255,.08);
+  --user:#fff;
+  --ripple-color: rgba(255,255,255,0.4);
+}
+
+*{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif}
+html,body{margin:0;height:100%;background:var(--bg);color:#fff;overflow:hidden}
+
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* HEADER */
+header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 16px;
+  background:var(--glass);
+  backdrop-filter:blur(18px) saturate(160%);
+  border-bottom:1px solid rgba(255,255,255,.15);
+}
+.brand{display:flex;gap:10px;align-items:center}
+.brand img{
+  width:40px;height:40px;border-radius:14px;
+  filter:drop-shadow(0 0 10px #fff)
+}
+.title{font-weight:700;font-size:1.2rem}
+.btn{
+  position:relative;
+  overflow:hidden;
+  padding:8px 14px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.08);
+  color:#fff;cursor:pointer;
+  transition:transform .15s ease;
+}
+.btn:active{transform:scale(.95)}
+
+/* CHAT */
+#chat-box{
+  flex:1;overflow:auto;
+  padding:20px 16px 140px;
+  scroll-behavior:smooth;
+}
+.list{
+  max-width:960px;margin:auto;
+  display:flex;flex-direction:column;gap:14px;
+}
+.msg{
+  max-width:80%;
+  padding:16px 18px;
+  border-radius:28px;
+  backdrop-filter:blur(16px) saturate(160%);
+  animation:fade .25s ease;
+}
+.msg.ai{
+  align-self:flex-start;
+  background:var(--ai);
+  box-shadow:0 0 16px rgba(255,255,255,.15);
+}
+.msg.user{
+  align-self:flex-end;
+  background:var(--user);
+  color:#000;
+  box-shadow:0 0 18px rgba(255,255,255,.4);
+}
+
+/* THINKING */
+.msg.thinking{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  background:rgba(255,255,255,.10);
+}
+.brain{
+  width:34px;height:34px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.2));
+  animation:pulse 1.6s infinite;
+  box-shadow:0 0 14px rgba(255,255,255,.6);
+  position:relative;
+}
+.brain::after{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.4);
+  animation:ripple 1.6s infinite;
+}
+.thinking-text{font-weight:600;opacity:.85}
+
+@keyframes pulse{50%{transform:scale(1.15)}}
+@keyframes ripple{
+  from{opacity:.8;transform:scale(.8)}
+  to{opacity:0;transform:scale(1.6)}
+}
+@keyframes fade{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:none}
+}
+
+/* COMPOSER */
+.composer{
+  position:fixed;left:0;right:0;bottom:0;
+  padding:14px 16px;
+  background:var(--glass);
+  backdrop-filter:blur(20px) saturate(160%);
+  border-top:1px solid rgba(255,255,255,.18);
+}
+@supports(padding:env(safe-area-inset-bottom)){
+  .composer{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+}
+.input{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:999px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.25);
+}
+input{
+  flex:1;border:none;outline:none;
+  background:transparent;color:#fff;font-size:16px;
+}
+.send-btn{
+  position:relative;
+  width:44px;height:44px;border-radius:50%;
+  border:none;background:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 14px rgba(255,255,255,.6);
+  overflow:hidden;
+  transition:transform .15s ease;
+}
+.send-btn:active{transform:scale(.95)}
+.send-btn svg{width:20px;height:20px;fill:#000}
+
+/* LIQUID GLASS RIPPLE */
+.ripple{
+  position:absolute;
+  border-radius:50%;
+  transform:scale(0);
+  animation:ripple-animation 0.6s linear;
+  background-color: var(--ripple-color);
+  pointer-events:none;
+}
+@keyframes ripple-animation {
+  to {
+    transform:scale(4);
+    opacity:0;
   }
+}
 
-  *{box-sizing:border-box;font-family:'Plus Jakarta Sans',sans-serif;}
-  html,body{height:100%;margin:0;background:var(--bg);color:#fff; overflow:hidden;}
-  .app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
-  header {
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:12px 16px; position:sticky; top:0; z-index:30;
-    background:var(--glass); backdrop-filter: blur(12px); border-bottom:1px solid rgba(255,255,255,0.1);
-  }
-  .brand{display:flex;align-items:center;gap:10px;}
-  .brand img{height:40px;width:40px;border-radius:10px;object-fit:cover; filter: drop-shadow(0 0 8px #0ff);}
-  .brand .title{font-weight:700;font-size:1.2rem; text-shadow: 0 0 6px #0ff;}
-  .header-actions{display:flex;gap:8px;align-items:center;}
-  .btn {
-    background:rgba(255,255,255,0.05);border:1px solid #0ff;padding:8px 12px;border-radius:12px;font-weight:600;cursor:pointer;
-    color:#0ff; text-shadow:0 0 4px #0ff;
-    transition: transform 0.2s ease, background 0.2s ease;
-  }
-  .btn:hover { transform: scale(1.05); background:rgba(0,255,255,0.1);}
-  .btn:active{transform:translateY(1px);}
-
-  #chat-box{flex:1; overflow:auto; padding:22px 18px 120px; -webkit-overflow-scrolling:touch;}
-  .list{display:flex; flex-direction:column; gap:12px; max-width:980px; margin:0 auto;}
-
-  @keyframes fadeSlideIn { 0%{opacity:0; transform:translateY(20px);} 100%{opacity:1; transform:translateY(0);} }
-  @keyframes bubblePop {0%{transform:scale(0.95);}50%{transform:scale(1.05);}100%{transform:scale(1);}}
-  @keyframes toastSlide {0%{opacity:0; transform:translate(-50%,20px);}100%{opacity:1; transform:translate(-50%,0);}}
-  @keyframes woopAnim {0%{transform: scale(1) rotate(0deg);}25%{transform: scale(1.2) rotate(-15deg);}50%{transform: scale(1) rotate(10deg);}75%{transform: scale(1.1) rotate(-5deg);}100%{transform: scale(1) rotate(0deg);}}
-  @keyframes moveBall {0%{transform: translateY(0);}50%{transform: translateY(-6px);}100%{transform: translateY(0);}}
-
-  .msg {
-    position:relative; padding:14px 16px; border-radius:var(--radius); max-width:80%;
-    word-break:break-word; line-height:1.5; box-shadow:0 0 16px rgba(0,255,255,0.2),0 6px 18px rgba(0,255,255,0.05);
-    user-select:text; animation:fadeSlideIn 0.35s ease forwards; transition:transform 0.12s ease, box-shadow 0.12s ease;
-    overflow:hidden;
-  }
-  .msg:hover{animation:bubblePop 0.25s ease;}
-  .msg.ai{align-self:flex-start;background:var(--ai-bubble); color:#fff; border-bottom-left-radius:12px; border:1px solid rgba(0,255,255,0.3);}
-  .msg.user{align-self:flex-end;background:var(--user-bubble); color:#000; border-bottom-right-radius:12px; text-shadow:0 0 2px #000;}
-
-  .typing-dots { display:flex; gap:4px; margin-left:4px; }
-  .typing-dots span { width:8px; height:8px; background:#0ff; border-radius:50%; display:inline-block; animation:moveBall 1s infinite; }
-  .typing-dots span:nth-child(2){ animation-delay:0.2s; }
-  .typing-dots span:nth-child(3){ animation-delay:0.4s; }
-
-  .composer {position:fixed; left:0; right:0; bottom:0; padding:12px 16px; background:var(--glass);
-    border-top:1px solid rgba(0,255,255,0.2); display:flex;align-items:center;gap:10px; z-index:40; backdrop-filter:blur(12px);}
-  .composer .input {flex:1; display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.05); padding:10px; border-radius:30px; border:1px solid #0ff;}
-  input[type="text"]{border:none;background:transparent;outline:none;font-size:1rem;padding:8px 6px;width:100%; color:#0ff;}
-
-  .send-btn{width:50px;height:50px;border-radius:50%;border:none;background:#0ff;display:flex;align-items:center;justify-content:center;cursor:pointer;
-    box-shadow:0 0 16px #0ff, 0 6px 18px rgba(0,255,255,0.14); transition: transform .15s ease, box-shadow .15s ease;}
-  .send-btn:active{transform:scale(.98);}
-  .send-btn svg{width:22px;height:22px;fill:#000;}
-  .send-btn.woop { animation:woopAnim 0.3s ease forwards; }
-
-  .toast {position:fixed; left:50%; bottom:86px; transform:translateX(-50%); background:rgba(0,255,255,0.2); color:#0ff;
-    padding:8px 12px; border-radius:10px; font-weight:600; z-index:70; opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;}
-  .toast.show{opacity:1; pointer-events:auto; animation:toastSlide .3s ease forwards;}
+/* RESPONSIVE */
+@media(max-width:600px){
+  .msg{max-width:95%;padding:12px 14px;border-radius:20px}
+  .title{font-size:1rem}
+  header{padding:10px 12px}
+  .composer{padding:10px 12px}
+  .input{padding:8px 12px}
+}
 </style>
 </head>
+
 <body>
 <div class="app">
-  <header>
-    <div class="brand">
-      <img src="Image.jpg" alt="logo">
-      <div class="title">Proxis</div>
-    </div>
-    <div class="header-actions">
-      <button id="clear-btn" class="btn" title="Clear chat">Clear</button>
-    </div>
-  </header>
 
-  <main id="chat-box">
-    <div class="list" id="message-list" aria-live="polite"></div>
-  </main>
+<header>
+  <div class="brand">
+    <img src="Image.jpg">
+    <div class="title">Proxis</div>
+  </div>
+  <button id="clear" class="btn">Clear</button>
+</header>
 
-  <div id="toast" class="toast" aria-hidden="true"></div>
+<main id="chat-box">
+  <div id="messages" class="list"></div>
+</main>
 
-  <div class="composer">
-    <div class="input" role="form">
-      <input id="user-input" type="text" placeholder="Ask Proxis anything..." autocomplete="off" />
-    </div>
-    <button id="send-btn" class="send-btn" title="Send message">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+<div class="composer">
+  <div class="input">
+    <input id="input" placeholder="Ask Proxis anything…" autocomplete="off">
+    <button id="send" class="send-btn">
+      <svg viewBox="0 0 24 24"><path d="M2 21L23 12 2 3v7l15 2-15 2z"/></svg>
     </button>
   </div>
 </div>
@@ -110,111 +197,108 @@
 <script type="module">
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-const API_KEY = "AIzaSyB73y0m9q0zeR5myCN1BxzFOVAtcowMOU0";
-const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+/* ✅ SYSTEM PROMPT */
+const SYSTEM_PROMPT = `
+You are Proxis, a Large Language Model by RonzDavil.
+Be friendly, natural, and professional.
+Give short, clear, and easy-to-understand responses.
+Talk about yourself only when asked.
+If the user asks for details, then give detailed answers.
+`;
 
-const SYSTEM_PROMPT = `You are Proxis, a Large Language Model by RonzDavil. Be friendly,natural and profesional. Give short,clear and easy to understant response. Tell only about you when needed or asked. When say to give detail tgen give detail.'`;
+const model = new GoogleGenerativeAI(
+  "AIzaSyB73y0m9q0zeR5myCN1BxzFOVAtcowMOU0"
+).getGenerativeModel({ model:"gemini-2.5-flash" });
 
-const msgList = document.getElementById('message-list');
-const chatBox = document.getElementById('chat-box');
-const input = document.getElementById('user-input');
-const sendBtn = document.getElementById('send-btn');
-const clearBtn = document.getElementById('clear-btn');
-const toast = document.getElementById('toast');
+const messagesEl = document.getElementById("messages");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+const clearBtn = document.getElementById("clear");
+const chatBox = document.getElementById("chat-box");
 
-let chatMemory = JSON.parse(localStorage.getItem('chatMemory') || '[]');
-let currentInterval = null; // reference for ongoing streaming
+let memory = JSON.parse(localStorage.getItem("proxis_chat") || "[]");
+let thinkingEl = null;
+let busy = false;
 
-function renderMessages() {
-  msgList.innerHTML = '';
-  chatMemory.forEach(m => {
-    const el = document.createElement('div');
-    el.className = 'msg ' + (m.sender === 'user' ? 'user' : 'ai');
-    el.dataset.id = m.id;
+/* RIPPLE EFFECT */
+function createRipple(e) {
+  const btn = e.currentTarget;
+  const circle = document.createElement("span");
+  circle.className = "ripple";
+  const rect = btn.getBoundingClientRect();
+  circle.style.left = (e.clientX - rect.left) + "px";
+  circle.style.top = (e.clientY - rect.top) + "px";
+  btn.appendChild(circle);
+  setTimeout(()=>circle.remove(),600);
+}
+document.querySelectorAll(".btn, .send-btn").forEach(b=>b.addEventListener("click",createRipple));
 
-    if(m.typing){
-      const dots = document.createElement('div');
-      dots.className = 'typing-dots';
-      for(let i=0;i<3;i++){
-        const span = document.createElement('span');
-        dots.appendChild(span);
-      }
-      el.appendChild(dots);
-    } else {
-      el.innerText = m.text;
-    }
-
-    msgList.appendChild(el);
+/* RENDER */
+function render(){
+  messagesEl.innerHTML="";
+  memory.forEach(m=>{
+    const d=document.createElement("div");
+    d.className="msg "+m.role;
+    d.textContent=m.text;
+    messagesEl.appendChild(d);
   });
+  if(thinkingEl) messagesEl.appendChild(thinkingEl);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function addMessage(text, sender) {
-  chatMemory.push({ text, sender, id: Date.now() });
-  localStorage.setItem('chatMemory', JSON.stringify(chatMemory));
-  renderMessages();
+/* THINKING */
+function showThinking(){
+  thinkingEl=document.createElement("div");
+  thinkingEl.className="msg ai thinking";
+  thinkingEl.innerHTML=`<div class="brain"></div><div class="thinking-text">Proxis is thinking…</div>`;
+  render();
+}
+function hideThinking(){ thinkingEl=null; }
+
+/* SEND */
+async function send(){
+  if(busy) return;
+  const text=input.value.trim();
+  if(!text) return;
+
+  busy=true;
+  input.value="";
+
+  memory.push({role:"user",text});
+  localStorage.setItem("proxis_chat",JSON.stringify(memory));
+  showThinking();
+
+  try{
+    const prompt = SYSTEM_PROMPT + "\n\n" +
+      memory.map(m => `${m.role === "user" ? "User" : "Proxis"}: ${m.text}`).join("\n");
+
+    const r = await model.generateContent(prompt);
+
+    hideThinking();
+    memory.push({role:"ai",text:r.response.text()});
+  }catch{
+    hideThinking();
+    memory.push({role:"ai",text:"⚠️ Error. Try again."});
+  }
+
+  localStorage.setItem("proxis_chat",JSON.stringify(memory));
+  busy=false;
+  render();
+  input.focus();
 }
 
-async function streamResponse(userText) {
-  // Stop previous streaming if any
-  if(currentInterval) { clearInterval(currentInterval); currentInterval = null; }
+/* EVENTS */
+sendBtn.onclick=send;
+input.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();send();}};
+clearBtn.onclick=()=>{
+  memory=[];
+  localStorage.removeItem("proxis_chat");
+  render();
+};
 
-  // Remove previous typing indicators
-  chatMemory = chatMemory.filter(m => !m.typing);
-
-  const typingId = 'typing-' + Date.now();
-  chatMemory.push({ sender:'ai', id:typingId, typing:true });
-  renderMessages();
-
-  sendBtn.classList.add('woop');
-  setTimeout(()=>sendBtn.classList.remove('woop'),300);
-
-  try {
-    const conversation = chatMemory.map(m=>`${m.sender==='user'?'User':'AI'}: ${m.text || ''}`).join('\n') + `\nUser: ${userText}`;
-    const result = await model.generateContent(SYSTEM_PROMPT + '\n\n' + conversation);
-    const text = result.response.text();
-
-    chatMemory = chatMemory.filter(m=>m.id!==typingId);
-    const aiMsg = { text:'', sender:'ai', id: Date.now() };
-    chatMemory.push(aiMsg);
-    renderMessages();
-
-    const aiEl = document.querySelector(`.msg[data-id='${aiMsg.id}']`);
-    let index = 0;
-    currentInterval = setInterval(()=>{
-      if(index < text.length){
-        aiMsg.text += text[index++];
-        aiEl.innerText = aiMsg.text;
-        chatBox.scrollTop = chatBox.scrollHeight;
-      } else {
-        clearInterval(currentInterval);
-        currentInterval = null;
-        localStorage.setItem('chatMemory', JSON.stringify(chatMemory));
-      }
-    }, 25);
-
-  } catch(e) {
-    chatMemory = chatMemory.filter(m=>m.id!==typingId);
-    chatMemory.push({ text:'⚠️ Proxis encountered an error.', sender:'ai', id: Date.now() });
-    localStorage.setItem('chatMemory', JSON.stringify(chatMemory));
-    renderMessages();
-    console.error(e);
-  }
-}
-
-sendBtn.addEventListener('click', ()=>{
-  if(input.value.trim()){
-    addMessage(input.value.trim(),'user');
-    streamResponse(input.value.trim());
-    input.value='';
-  }
-});
-input.addEventListener('keydown', (e)=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendBtn.click();}});
-clearBtn.addEventListener('click', ()=>{chatMemory=[];localStorage.setItem('chatMemory', '[]');renderMessages(); showToast('Chat cleared');});
-
-function showToast(msg, ms=1300){toast.innerText=msg;toast.classList.add('show'); setTimeout(()=>{toast.classList.remove('show');}, ms);}
-renderMessages();
+render();
+input.focus();
 </script>
 </body>
+</html>
 </html>
