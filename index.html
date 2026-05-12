@@ -244,7 +244,7 @@ input {
 import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
 const SYSTEM_PROMPT = `You are Proxis, a Large Language Model by RonzDavil. Be friendly and clear. Be natural and professional. Ans shortly and clearly. Do not use your full power and potential unless user write a RonzDavil and send you. `;
-const genAI = new GoogleGenerativeAI("AIzaSyCrMlZVYSz_bNQ4M16gQ4dCzWbZ3BzlQLk");
+const genAI = new GoogleGenerativeAI("GOOGLE_API");
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", systemInstruction: SYSTEM_PROMPT });
 
 const messagesEl = document.getElementById("messages");
