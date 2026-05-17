@@ -330,7 +330,7 @@ async function send() {
         if (text) parts.push({ text });
         if (fileToUpload) parts.push({ inlineData: fileToUpload.inlineData });
 
-        // ROUTE SAFELY THROUGH VERCEL BACKEND PROXY
+        // ROUTE THROUGH VERCEL SERVERLESS BACKEND
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -362,4 +362,3 @@ if (memory.length > 0) {
 </script>
 </body>
 </html>
-
