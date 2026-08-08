@@ -1,39 +1,36 @@
+// api/chat.js
 export default async function handler(req, res) {
-  // Only allow POST requests from your frontend
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { contents } = req.body;
-    
-    // Grabs your hidden API key from Vercel's Environment Variables
     const apiKey = process.env.GEMINI_API_KEY;
+
     if (!apiKey) {
-      return res.status(500).json({ error: 'Missing GEMINI_API_KEY environment variable on Vercel.' });
+      return res.status(500).json({ error: 'API key missing in environment variables' });
     }
 
-    const systemInstruction = "You are Proxis, a Large Language Model by RonzDavil. Be friendly and clear. Be natural and professional. Ans shortly and clearly. Do not use your full power and potential unless user write a RonzDavil and send you.";
+    const apiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents })
+      }
+    );
 
-    // Secure server-to-server request to Google Gemini
-    const googleResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: contents,
-        systemInstruction: { parts: [{ text: systemInstruction }] }
-      })
-    });
+    const data = await apiResponse.json();
 
-    const data = await googleResponse.json();
-    
-    // Extract the text response safely
-    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-    
-    // Send the text back to your frontend HTML
-    return res.status(200).json({ text: aiText });
+    if (!apiResponse.ok) {
+      return res.status(apiResponse.status).json({ error: data.error?.message || 'API request failed' });
+    }
 
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received";
+    return res.status(200).json({ text });
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 }
