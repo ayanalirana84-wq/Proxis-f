@@ -45,7 +45,6 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text-m
   transition: all 0.3s var(--spring); box-shadow: 0 10px 25px rgba(45, 36, 30, 0.2);
 }
 .start-btn:hover { transform: scale(1.05); background: #000; }
-/* --- End Welcome Screen Styling --- */
 
 body::before {
   content: ""; position: fixed; top: -10%; left: -10%; width: 40%; height: 40%;
@@ -115,6 +114,7 @@ header {
   align-self: flex-start; background: var(--ai-bubble); color: var(--text-main);
   border-radius: 28px 28px 28px 4px; border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
+  white-space: pre-wrap;
 }
 
 .file-thumb { 
@@ -199,8 +199,8 @@ input {
 
 <div id="welcome-screen">
   <img src="Image.jpg" class="welcome-logo" onerror="this.src='https://placehold.co/100x100/e5d3c5/4a3728?text=Proxis'">
-  <h1 class="welcome-title">Proxis</br>Ultra 1.5</h1>
-  <p class="welcome-sub">The next generation multimodal assistant. Chat, analyze files, and explore. </br> </br> All writes to RonzDavil </br>Contact: ronzdavil@gmail.com</p>
+  <h1 class="welcome-title">Proxis<br>Ultra 1.5</h1>
+  <p class="welcome-sub">The next generation multimodal assistant. Chat, analyze files, and explore.<br><br>All writes to RonzDavil<br>Contact: ronzdavil@gmail.com</p>
   <button class="start-btn" onclick="startApp()">Start Chatting</button>
 </div>
 
@@ -266,88 +266,96 @@ window.startApp = function() {
 };
 
 function checkGreeting() {
-    if (memory.length === 0) {
-        memory.push({ role: "ai", text: "Hey! I'm Proxis. How can i assist you." });
-    }
+  if (memory.length === 0) {
+    memory.push({ role: "ai", text: "Hey! I'm Proxis. How can I assist you today?" });
+  }
 }
 
 fileInput.onchange = () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-        currentFile = { inlineData: { data: reader.result.split(',')[1], mimeType: file.type }, name: file.name, type: file.type, raw: reader.result };
-        fileNameLabel.textContent = file.name;
-        preview.style.display = "block";
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    currentFile = { 
+      inlineData: { data: reader.result.split(',')[1], mimeType: file.type }, 
+      name: file.name, 
+      type: file.type, 
+      raw: reader.result 
     };
-    reader.readAsDataURL(file);
+    fileNameLabel.textContent = file.name;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(file);
 };
 
 document.getElementById("remove-file").onclick = () => {
-    currentFile = null;
-    preview.style.display = "none";
-    fileInput.value = "";
+  currentFile = null;
+  preview.style.display = "none";
+  fileInput.value = "";
 };
 
 function render() {
-    messagesEl.innerHTML = "";
-    memory.forEach((m, index) => {
-        const d = document.createElement("div");
-        d.className = "msg " + m.role;
-        d.style.animationDelay = `${index * 0.05}s`;
+  messagesEl.innerHTML = "";
+  memory.forEach((m, index) => {
+    const d = document.createElement("div");
+    d.className = "msg " + m.role;
+    d.style.animationDelay = `${index * 0.05}s`;
 
-        if (m.file) {
-            if (m.file.type.startsWith('image/')) {
-                const img = document.createElement('img'); img.src = m.file.raw; img.className = 'file-thumb'; d.appendChild(img);
-            } else {
-                const p = document.createElement('div'); p.className = 'file-pill'; p.innerHTML = `📎 ${m.file.name}`; d.appendChild(p);
-            }
-        }
-        const t = document.createElement('div'); t.textContent = m.text; d.appendChild(t);
-        messagesEl.appendChild(d);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
+    if (m.file) {
+      if (m.file.type.startsWith('image/')) {
+        const img = document.createElement('img'); img.src = m.file.raw; img.className = 'file-thumb'; d.appendChild(img);
+      } else {
+        const p = document.createElement('div'); p.className = 'file-pill'; p.innerHTML = `📎 ${m.file.name}`; d.appendChild(p);
+      }
+    }
+    const t = document.createElement('div'); t.textContent = m.text; d.appendChild(t);
+    messagesEl.appendChild(d);
+  });
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 async function send() {
-    if (busy || (!input.value.trim() && !currentFile)) return;
-    const text = input.value.trim();
-    const fileToUpload = currentFile;
-    busy = true;
-    input.value = ""; currentFile = null; preview.style.display = "none";
-    
-    memory.push({ role: "user", text: text || "Analyze this", file: fileToUpload });
-    render();
+  if (busy || (!input.value.trim() && !currentFile)) return;
+  const text = input.value.trim();
+  const fileToUpload = currentFile;
+  busy = true;
+  input.value = ""; currentFile = null; preview.style.display = "none"; fileInput.value = "";
+  
+  memory.push({ role: "user", text: text || "Analyze this", file: fileToUpload });
+  render();
 
-    const think = document.createElement("div");
-    think.className = "msg ai thinking";
-    think.innerHTML = `<div class="dot"></div><div class="dot"></div><div class="dot"></div>`;
-    messagesEl.appendChild(think);
-    chatBox.scrollTop = chatBox.scrollHeight;
+  const think = document.createElement("div");
+  think.className = "msg ai thinking";
+  think.innerHTML = `<div class="dot"></div><div class="dot"></div><div class="dot"></div>`;
+  messagesEl.appendChild(think);
+  chatBox.scrollTop = chatBox.scrollHeight;
 
-    try {
-        const parts = [];
-        if (text) parts.push({ text });
-        if (fileToUpload) parts.push({ inlineData: fileToUpload.inlineData });
+  try {
+    const parts = [];
+    if (text) parts.push({ text });
+    if (fileToUpload) parts.push({ inlineData: fileToUpload.inlineData });
 
-        // ROUTE THROUGH VERCEL SERVERLESS BACKEND
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: parts })
-        });
+    // ROUTE THROUGH VERCEL SERVERLESS BACKEND
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: parts })
+    });
 
-        if (!response.ok) throw new Error('API server failed');
-        const data = await response.json();
-        
-        think.remove();
-        memory.push({ role: "ai", text: data.text });
-    } catch (e) {
-        think.remove();
-        memory.push({ role: "ai", text: "Something went wrong. Please try again later." });
+    const data = await response.json();
+    think.remove();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Server error occurred');
     }
-    localStorage.setItem("proxis_pill_v1", JSON.stringify(memory));
-    busy = false; render();
+
+    memory.push({ role: "ai", text: data.text });
+  } catch (e) {
+    think.remove();
+    memory.push({ role: "ai", text: `Error: ${e.message || "Something went wrong. Please check your connection."}` });
+  }
+  localStorage.setItem("proxis_pill_v1", JSON.stringify(memory));
+  busy = false; render();
 }
 
 sendBtn.onclick = send;
@@ -362,3 +370,4 @@ if (memory.length > 0) {
 </script>
 </body>
 </html>
+
