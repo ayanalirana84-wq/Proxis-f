@@ -20,6 +20,9 @@
   <!-- Marked.js for Markdown Rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
+  <!-- PDF.js Engine for Client-side PDF Reading -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
     
@@ -132,7 +135,7 @@
       <img src="ai_icon.png" alt="Proxineon AI" class="w-8 h-8 ai-dp border border-white/10 shadow-sm shrink-0" onError="this.src='https://api.iconify.design/lucide:bot.svg?color=%23ffffff'" />
       <div class="flex items-center gap-1.5">
         <h1 class="font-semibold text-sm tracking-tight text-white">Proxineon AI</h1>
-        <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">120B</span>
+        <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">1.2 BETA</span>
       </div>
     </div>
 
@@ -156,7 +159,7 @@
       </div>
       <div class="space-y-1">
         <h2 id="welcomeGreeting" class="text-xl font-semibold text-white tracking-tight">What's on your mind today?</h2>
-        <p class="text-xs text-gray-400">Powered by RonzDavil Organisation</p>
+        <p class="text-xs text-gray-400">Powered by RonzDavil Organisation • Multi-file & Vision Enabled</p>
       </div>
     </div>
 
@@ -168,12 +171,26 @@
   <footer class="p-3 bg-gradient-to-t from-[#0d0d0d] via-[#0d0d0d]/95 to-transparent z-20 shrink-0">
     <div class="max-w-2xl mx-auto">
       
+      <!-- Attachment Previews Container -->
+      <div id="attachmentsPreview" class="hidden flex gap-2 overflow-x-auto pb-2 px-1 no-scrollbar"></div>
+
       <div class="composer-bg rounded-[26px] p-2 flex items-end gap-2 shadow-2xl transition-all duration-300">
+        <!-- Hidden File Input -->
+        <input type="file" id="fileInput" multiple class="hidden" accept="image/*,.pdf,.txt,.js,.html,.css,.json,.py,.java,.cpp,.c,.cs,.md" />
+
+        <button 
+          id="attachBtn" 
+          title="Attach File or Image" 
+          class="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all shrink-0 mb-0.5 active:scale-95"
+        >
+          <i class="fa-solid fa-paperclip text-sm"></i>
+        </button>
+
         <textarea 
           id="userInput" 
           rows="1" 
           placeholder="Message Proxineon AI..." 
-          class="flex-1 bg-transparent border-0 resize-none px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none max-h-36 no-scrollbar"
+          class="flex-1 bg-transparent border-0 resize-none px-2 py-2 text-sm text-white placeholder-gray-500 focus:outline-none max-h-36 no-scrollbar"
         ></textarea>
 
         <button 
@@ -245,20 +262,24 @@
   <script type="module">
     import { Groq } from 'https://esm.sh/groq-sdk';
 
-    // HARDCODED GROQ API KEY HERE
-    const GROQ_API_KEY = "gsk_..."; // Put your actual Groq API key here
+    // Set PDF.js Worker Src
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // HARDCODED GROQ API KEY
+    const GROQ_API_KEY = "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";
 
     let userName = localStorage.getItem('PROXINEON_USER_NAME') || '';
+    let attachedFiles = [];
 
     const getSystemPrompt = (name) => `You are Proxineon AI, an ultra-intelligent, highly intuitive, and versatile AI personal assistant built by RonzDavil Organisation.
 
-Your primary duty is to support, assist, and collaborate with ${name || 'Ayan'} across code architecture, system modifications, web development, and daily tasks.
+Your primary duty is to support, assist, and analyze media, code, files, and documents for ${name || 'Ayan'}.
 
 Persona & Communication Style:
-1. Speak in a natural, friendly, humanized, and conversational tone with zero robotic fluff or dry academic filler.
-2. Use a seamless, fluent blend of English and Roman Urdu (e.g., "Bilkul tension mat lo, ye issue hum easily fix kar lenge").
-3. Adapt instantly to the user's vibe—be direct, confident, witty, and grounded.
-4. When writing code or technical breakdown, be sharp, precise, and practical. Eliminate unnecessary pleasantries before presenting solutions.`;
+1. Speak in a natural, friendly, humanized tone with zero robotic fluff.
+2. Use a seamless, fluent blend of English and Roman Urdu (e.g., "Bilkul, file analyze kar li hai").
+3. When files, code, or images are provided, give direct, accurate insights based on the uploaded data.
+4. Keep technical breakdowns clean, practical, and highly scannable.`;
 
     let messagesHistory = [
       { role: "system", content: getSystemPrompt(userName) }
@@ -267,6 +288,9 @@ Persona & Communication Style:
     // DOM Elements
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
+    const attachBtn = document.getElementById('attachBtn');
+    const fileInput = document.getElementById('fileInput');
+    const attachmentsPreview = document.getElementById('attachmentsPreview');
     const messagesList = document.getElementById('messagesList');
     const heroCard = document.getElementById('heroCard');
     const chatContainer = document.getElementById('chatContainer');
@@ -283,6 +307,85 @@ Persona & Communication Style:
     const saveSettings = document.getElementById('saveSettings');
     const settingsNameInput = document.getElementById('settingsNameInput');
     const clearChatBtn = document.getElementById('clearChatBtn');
+
+    // File Processing Functions
+    attachBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          const base64 = await readFileAsDataURL(file);
+          attachedFiles.push({ type: 'image', name: file.name, data: base64 });
+        } else if (file.type === 'application/pdf') {
+          const text = await extractTextFromPDF(file);
+          attachedFiles.push({ type: 'text', name: file.name, data: text });
+        } else {
+          const text = await readFileAsText(file);
+          attachedFiles.push({ type: 'text', name: file.name, data: text });
+        }
+      }
+      renderAttachmentPreviews();
+      fileInput.value = '';
+    });
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsText(file);
+      });
+    }
+
+    async function extractTextFromPDF(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n';
+      }
+      return text;
+    }
+
+    function renderAttachmentPreviews() {
+      if (attachedFiles.length === 0) {
+        attachmentsPreview.classList.add('hidden');
+        attachmentsPreview.innerHTML = '';
+        return;
+      }
+
+      attachmentsPreview.classList.remove('hidden');
+      attachmentsPreview.innerHTML = '';
+
+      attachedFiles.forEach((file, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'flex items-center gap-2 bg-[#222222] border border-white/10 px-3 py-1.5 rounded-xl text-xs text-gray-200 shrink-0';
+        
+        const icon = file.type === 'image' ? 'fa-image' : 'fa-file-code';
+        chip.innerHTML = `
+          <i class="fa-solid ${icon} text-gray-400"></i>
+          <span class="max-w-[120px] truncate">${file.name}</span>
+          <button class="hover:text-rose-400 ml-1" data-index="${index}"><i class="fa-solid fa-xmark"></i></button>
+        `;
+
+        chip.querySelector('button').addEventListener('click', () => {
+          attachedFiles.splice(index, 1);
+          renderAttachmentPreviews();
+        });
+
+        attachmentsPreview.appendChild(chip);
+      });
+    }
 
     // Onboarding Check
     function checkUserOnboarding() {
@@ -417,19 +520,51 @@ Persona & Communication Style:
     async function handleSend() {
       const prompt = userInput.value.trim();
 
-      if (!prompt) return;
+      if (!prompt && attachedFiles.length === 0) return;
 
       if (!GROQ_API_KEY || GROQ_API_KEY === "gsk_...") {
-        alert("Please set your valid Groq API key inside the script variable: const GROQ_API_KEY = '...'");
+        alert("Please set your valid Groq API key inside the script variable.");
         return;
       }
+
+      // Structure Message Payload
+      let messageContent = [];
+      let displayPrompt = prompt;
+
+      if (attachedFiles.length > 0) {
+        attachedFiles.forEach(file => {
+          if (file.type === 'image') {
+            messageContent.push({
+              type: "image_url",
+              image_url: { url: file.data }
+            });
+          } else if (file.type === 'text') {
+            displayPrompt += `\n\n[Attached File: ${file.name}]\n\`\`\`\n${file.data}\n\`\`\``;
+          }
+        });
+      }
+
+      if (prompt || displayPrompt) {
+        messageContent.push({ type: "text", text: displayPrompt });
+      }
+
+      const messagePayload = {
+        role: 'user',
+        content: messageContent.length === 1 && messageContent[0].type === 'text' 
+          ? messageContent[0].text 
+          : messageContent
+      };
 
       userInput.value = '';
       userInput.style.height = 'auto';
       sendBtn.disabled = true;
 
-      appendMessage('user', prompt);
-      messagesHistory.push({ role: 'user', content: prompt });
+      const fileCount = attachedFiles.length;
+      attachedFiles = [];
+      renderAttachmentPreviews();
+
+      appendMessage('user', prompt + (fileCount > 0 ? ` 📎 (${fileCount} file/s attached)` : ''));
+      messagesHistory.push(messagePayload);
 
       const assistantBubble = appendMessage('assistant', '');
 
@@ -439,19 +574,18 @@ Persona & Communication Style:
           dangerouslyAllowBrowser: true 
         });
 
+        // Auto-switch to vision model if image attachment exists
+        const selectedModel = messageContent.some(item => item.type === 'image_url')
+          ? "llama-3.2-11b-vision-preview"
+          : "openai/gpt-oss-120b";
+
         const chatCompletion = await groq.chat.completions.create({
           messages: messagesHistory,
-          model: "openai/gpt-oss-120b",
+          model: selectedModel,
           temperature: 0.7,
           max_completion_tokens: 2048,
           top_p: 1,
-          stream: true,
-          reasoning_effort: "medium",
-          stop: null,
-          tools: [
-            { type: "browser_search" },
-            { type: "code_interpreter" }
-          ]
+          stream: true
         });
 
         let fullResponse = '';
