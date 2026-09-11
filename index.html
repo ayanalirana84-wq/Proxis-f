@@ -1,373 +1,491 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Proxis - OpenSource</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Proxineon AI</title>
+  
+  <!-- Favicon / Web App Icon -->
+  <link rel="icon" type="image/png" href="ai_icon.png" />
+  <link rel="apple-touch-icon" href="ai_icon.png" />
+  
+  <!-- Tailwind CSS & FontAwesome CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Highlight.js for Code Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+  <!-- Marked.js for Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-:root {
-  --bg: #fcf9f6;
-  --ai-bubble: #ffffff;
-  --user-bubble: #2d241e;
-  --text-main: #1a1614;
-  --text-muted: #8c7e74;
-  --accent: #d2b48c;
-  --border: rgba(74, 55, 40, 0.08);
-  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --shadow-soft: 0 10px 30px -10px rgba(74, 55, 40, 0.1);
-}
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+    
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
 
-* { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text-main); overflow: hidden; }
+    body {
+      background-color: #0d0d0d;
+      color: #ececec;
+      height: 100dvh;
+      overflow: hidden;
+    }
 
-/* --- Welcome Screen Styling --- */
-#welcome-screen {
-  position: fixed; inset: 0; background: var(--bg);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 1000; transition: transform 0.8s var(--spring), opacity 0.5s ease;
-  padding: 20px; text-align: center;
-}
-.welcome-logo {
-  width: 100px; height: 100px; border-radius: 30px;
-  box-shadow: 0 20px 40px rgba(74, 55, 40, 0.15);
-  margin-bottom: 24px; animation: welcomeFloat 3s infinite ease-in-out;
-}
-@keyframes welcomeFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-.welcome-title { font-size: 2.5rem; font-weight: 800; color: var(--user-bubble); margin: 0; letter-spacing: -1px; }
-.welcome-sub { color: var(--text-muted); margin-top: 10px; max-width: 300px; line-height: 1.5; }
-.start-btn {
-  margin-top: 40px; padding: 18px 48px; border-radius: 100px;
-  background: var(--user-bubble); color: white; border: none;
-  font-weight: 700; font-size: 16px; cursor: pointer;
-  transition: all 0.3s var(--spring); box-shadow: 0 10px 25px rgba(45, 36, 30, 0.2);
-}
-.start-btn:hover { transform: scale(1.05); background: #000; }
+    .composer-bg {
+      background-color: #1c1c1c;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
 
-body::before {
-  content: ""; position: fixed; top: -10%; left: -10%; width: 40%; height: 40%;
-  background: radial-gradient(circle, rgba(210, 180, 140, 0.15) 0%, transparent 70%);
-  filter: blur(80px); z-index: -1;
-}
+    .composer-bg:focus-within {
+      border-color: rgba(255, 255, 255, 0.25);
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+    }
 
-.app { display: flex; flex-direction: column; height: 100vh; position: relative; opacity: 0; transition: opacity 0.5s ease; }
-.app.active { opacity: 1; }
+    @keyframes msgIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
 
-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 24px;
-  background: rgba(252, 249, 246, 0.7);
-  backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--border);
-  z-index: 100;
-  animation: slideDown 0.8s var(--spring);
-}
+    .msg-animate {
+      animation: msgIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
 
-@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+    /* Code Container & Block Styling */
+    .code-container {
+      position: relative;
+      margin-top: 0.75rem;
+      margin-bottom: 0.75rem;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-.brand { display: flex; gap: 12px; align-items: center; }
-.brand img {
-  width: 42px; height: 42px; border-radius: 14px;
-  object-fit: cover; border: 2px solid #fff;
-  box-shadow: 0 4px 15px rgba(74, 55, 40, 0.1);
-  animation: rotateIn 1s var(--spring);
-}
+    pre code.hljs {
+      font-family: 'Fira Code', monospace !important;
+      font-size: 0.82rem;
+      padding: 1rem 1.25rem;
+      background: #141414 !important;
+      overflow-x: auto;
+    }
 
-@keyframes rotateIn { from { transform: rotate(-20deg) scale(0); } to { transform: rotate(0) scale(1); } }
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+    }
 
-.title { font-weight: 700; font-size: 1.2rem; color: var(--user-bubble); letter-spacing: -0.5px; }
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
 
-.btn-clear {
-  padding: 10px 20px; border-radius: 100px;
-  border: 1px solid var(--border); background: #fff;
-  cursor: pointer; font-weight: 600; font-size: 13px;
-  transition: all 0.3s var(--spring);
-}
-.btn-clear:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-color: var(--accent); }
-.btn-clear:active { transform: scale(0.95); }
+    /* Custom Prose & Markdown Elements */
+    .selectable-text { user-select: text; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-#chat-box {
-  flex: 1; overflow-y: auto; padding: 20px 16px 200px;
-  scroll-behavior: smooth;
-}
-.list { max-width: 750px; margin: auto; display: flex; flex-direction: column; gap: 20px; }
+    .ai-dp {
+      object-fit: cover;
+      border-radius: 9999px;
+    }
 
-.msg {
-  max-width: 85%; padding: 16px 22px; line-height: 1.6; font-size: 15px;
-  position: relative; animation: pillPop 0.6s var(--spring) both;
-}
+    .typing-dot {
+      animation: typing 1.4s infinite ease-in-out both;
+    }
 
-@keyframes pillPop {
-  0% { transform: scale(0.5) translateY(40px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
-.msg.user {
-  align-self: flex-end; background: var(--user-bubble); color: #fff;
-  border-radius: 28px 28px 4px 28px;
-  box-shadow: 0 15px 30px -10px rgba(45, 36, 30, 0.3);
-}
-
-.msg.ai {
-  align-self: flex-start; background: var(--ai-bubble); color: var(--text-main);
-  border-radius: 28px 28px 28px 4px; border: 1px solid var(--border);
-  box-shadow: var(--shadow-soft);
-  white-space: pre-wrap;
-}
-
-.file-thumb { 
-  width: 100%; max-width: 300px; border-radius: 20px; 
-  margin-bottom: 12px; display: block; border: 2px solid #fff;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.file-pill {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(0,0,0,0.05); padding: 12px 16px;
-  border-radius: 20px; margin-bottom: 8px; font-weight: 500;
-}
-.msg.user .file-pill { background: rgba(255,255,255,0.1); }
-
-.msg.thinking { background: none; border: none; box-shadow: none; display: flex; align-items: center; gap: 8px; }
-.dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: dotWave 1.4s infinite ease-in-out; }
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes dotWave { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-10px); } }
-
-.composer-wrap {
-  position: fixed; left: 0; right: 0; bottom: 30px;
-  padding: 0 20px; z-index: 200; pointer-events: none;
-}
-.composer-inner {
-  max-width: 700px; margin: auto; pointer-events: auto;
-  animation: slideUp 0.8s var(--spring);
-}
-
-@keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-.input-container {
-  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px);
-  border-radius: 40px; border: 1px solid rgba(255,255,255,0.5);
-  box-shadow: 0 20px 50px -15px rgba(74, 55, 40, 0.2);
-  transition: all 0.4s var(--spring);
-}
-.input-container:focus-within { transform: scale(1.02) translateY(-5px); border-color: var(--accent); background: #fff; }
-
-input {
-  flex: 1; border: none; outline: none; background: transparent;
-  padding: 12px 10px; font-size: 16px; color: var(--text-main);
-}
-
-.send-btn {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: var(--user-bubble); border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.3s var(--spring);
-}
-.send-btn svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2.5; }
-.send-btn:hover { transform: rotate(15deg) scale(1.1); background: #000; }
-.send-btn:active { transform: scale(0.9); }
-
-.attach-label {
-  width: 44px; height: 44px;
-  border-radius: 50%; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted); transition: all 0.3s var(--spring);
-}
-.attach-label:hover { background: rgba(210, 180, 140, 0.15); color: var(--accent); transform: scale(1.1); }
-.attach-label svg { width: 24px; height: 24px; }
-
-.attachment-preview {
-  display: none; background: #fff; border-radius: 20px 20px 0 0;
-  padding: 12px 16px; border: 1px solid var(--border);
-  border-bottom: none; margin-bottom: -20px; width: fit-content;
-  margin-left: 20px; animation: pillPop 0.4s var(--spring);
-}
-
-@media(max-width: 600px) {
-  .msg { max-width: 90%; }
-  .composer-wrap { bottom: 15px; }
-}
-</style>
+    @keyframes typing {
+      0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1.1); }
+    }
+  </style>
 </head>
+<body class="flex flex-col antialiased bg-[#0d0d0d]">
 
-<body>
-
-<div id="welcome-screen">
-  <img src="Image.jpg" class="welcome-logo" onerror="this.src='https://placehold.co/100x100/e5d3c5/4a3728?text=Proxis'">
-  <h1 class="welcome-title">Proxis<br>Ultra 1.5</h1>
-  <p class="welcome-sub">The next generation multimodal assistant. Chat, analyze files, and explore.<br><br>All writes to RonzDavil<br>Contact: ronzdavil@gmail.com</p>
-  <button class="start-btn" onclick="startApp()">Start Chatting</button>
-</div>
-
-<div class="app" id="main-app">
-  <header>
-    <div class="brand">
-      <img src="Image.jpg" onerror="this.src='https://placehold.co/80x80/e5d3c5/4a3728?text=Proxis'">
-      <div class="title">Proxis</div>
+  <!-- Top App Navigation -->
+  <header class="h-14 px-4 sticky top-0 z-30 flex items-center justify-between border-b border-white/[0.08] bg-[#0d0d0d]/85 backdrop-blur-xl shrink-0">
+    <div class="flex items-center gap-2.5">
+      <img src="ai_icon.png" alt="Proxineon AI" class="w-8 h-8 ai-dp border border-white/10 shadow-sm shrink-0" onError="this.src='https://api.iconify.design/lucide:bot.svg?color=%23ffffff'" />
+      <div class="flex items-center gap-1.5">
+        <h1 class="font-semibold text-sm tracking-tight text-white">Proxineon AI</h1>
+        <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">120B</span>
+      </div>
     </div>
-    <button id="clear" class="btn-clear">Clear Chat</button>
+
+    <div class="flex items-center gap-1">
+      <button id="clearChatBtn" title="New Chat" class="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-95">
+        <i class="fa-regular fa-pen-to-square text-sm"></i>
+      </button>
+      <button id="settingsBtn" title="Settings" class="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-95">
+        <i class="fa-solid fa-sliders text-sm"></i>
+      </button>
+    </div>
   </header>
 
-  <main id="chat-box">
-    <div id="messages" class="list"></div>
+  <!-- Main Scrollable Chat Viewport -->
+  <main id="chatContainer" class="flex-1 overflow-y-auto px-4 py-6 space-y-6 no-scrollbar">
+    
+    <!-- Hero Initial Greeting Screen -->
+    <div id="heroCard" class="flex flex-col items-center justify-center min-h-[65vh] text-center space-y-4 msg-animate">
+      <div class="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1 shadow-2xl">
+        <img src="ai_icon.png" alt="AI Avatar" class="w-full h-full ai-dp" onError="this.src='https://api.iconify.design/lucide:bot.svg?color=%23ffffff'" />
+      </div>
+      <div class="space-y-1">
+        <h2 id="welcomeGreeting" class="text-xl font-semibold text-white tracking-tight">What's on your mind today?</h2>
+        <p class="text-xs text-gray-400">Powered by RonzDavil Organisation</p>
+      </div>
+    </div>
+
+    <!-- Messages List Mount -->
+    <div id="messagesList" class="max-w-2xl mx-auto space-y-6 pb-6"></div>
   </main>
 
-  <div class="composer-wrap">
-    <div class="composer-inner">
-      <div id="attachment-preview" class="attachment-preview">
-        <span style="font-size: 13px; font-weight: 600; color: var(--accent);" id="file-name"></span>
-        <span id="remove-file" style="margin-left:10px; cursor:pointer; color:#ff4d4d; font-weight:bold; font-size: 18px;">&times;</span>
+  <!-- Bottom Floating Composer -->
+  <footer class="p-3 bg-gradient-to-t from-[#0d0d0d] via-[#0d0d0d]/95 to-transparent z-20 shrink-0">
+    <div class="max-w-2xl mx-auto">
+      
+      <div class="composer-bg rounded-[26px] p-2 flex items-end gap-2 shadow-2xl transition-all duration-300">
+        <textarea 
+          id="userInput" 
+          rows="1" 
+          placeholder="Message Proxineon AI..." 
+          class="flex-1 bg-transparent border-0 resize-none px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none max-h-36 no-scrollbar"
+        ></textarea>
+
+        <button 
+          id="sendBtn" 
+          class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center disabled:opacity-30 transition-all duration-200 shrink-0 mb-0.5 active:scale-90 shadow-md"
+        >
+          <i class="fa-solid fa-arrow-up text-sm font-bold"></i>
+        </button>
       </div>
-      <div class="input-container">
-        <label class="attach-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-          </svg>
-          <input type="file" id="file-input" hidden accept="image/*,video/*,audio/*,application/pdf,text/*">
-        </label>
-        <input id="input" placeholder="Ask Proxis anything..." autocomplete="off">
-        <button id="send" class="send-btn">
-          <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+      <p class="text-[10px] text-center text-gray-500 mt-2 font-medium">Proxineon AI • Developed by RonzDavil Organisation</p>
+    </div>
+  </footer>
+
+  <!-- First Time User Welcome Modal -->
+  <div id="onboardingModal" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#171717] w-full max-w-sm rounded-3xl p-6 space-y-5 border border-white/10 shadow-2xl msg-animate text-center">
+      <div class="w-16 h-16 mx-auto rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1">
+        <img src="ai_icon.png" alt="AI Icon" class="w-full h-full ai-dp" onError="this.src='https://api.iconify.design/lucide:bot.svg?color=%23ffffff'" />
+      </div>
+
+      <div class="space-y-1">
+        <h3 class="font-semibold text-white text-base">Welcome to Proxineon AI</h3>
+        <p class="text-xs text-gray-400">Aapka naam kya hai?</p>
+      </div>
+      
+      <div class="space-y-3">
+        <input 
+          type="text" 
+          id="userNameInput" 
+          placeholder="Enter your name..." 
+          class="w-full px-4 py-3 rounded-2xl bg-[#212121] text-sm text-white border border-white/10 focus:outline-none focus:border-white/30 text-center"
+        />
+        <button id="saveNameBtn" class="w-full py-3 rounded-2xl bg-white text-black font-semibold text-xs active:scale-95 transition-all">
+          Get Started
         </button>
       </div>
     </div>
-  </div> 
-</div>
+  </div>
 
-<script>
-const messagesEl = document.getElementById("messages");
-const input = document.getElementById("input");
-const sendBtn = document.getElementById("send");
-const clearBtn = document.getElementById("clear");
-const chatBox = document.getElementById("chat-box");
-const fileInput = document.getElementById("file-input");
-const preview = document.getElementById("attachment-preview");
-const fileNameLabel = document.getElementById("file-name");
+  <!-- Settings Overlay Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#171717] w-full max-w-sm rounded-3xl p-6 space-y-5 border border-white/10 shadow-2xl msg-animate">
+      <div class="flex justify-between items-center">
+        <h3 class="font-semibold text-white text-sm flex items-center gap-2">
+          <i class="fa-solid fa-user text-gray-400"></i> Profile Settings
+        </h3>
+        <button id="closeSettings" class="text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="space-y-2">
+          <label class="text-xs text-gray-400 font-medium">Your Name</label>
+          <input 
+            type="text" 
+            id="settingsNameInput" 
+            class="w-full px-4 py-3 rounded-2xl bg-[#212121] text-xs text-white border border-white/10 focus:outline-none focus:border-white/30"
+          />
+        </div>
+      </div>
 
-let memory = JSON.parse(localStorage.getItem("proxis_pill_v1") || "[]");
-let busy = false;
-let currentFile = null;
+      <button id="saveSettings" class="w-full py-3 rounded-2xl bg-white text-black font-semibold text-xs active:scale-95 transition-all">
+        Save Changes
+      </button>
+    </div>
+  </div>
 
-// Welcome Logic
-window.startApp = function() {
-  const ws = document.getElementById('welcome-screen');
-  const app = document.getElementById('main-app');
-  ws.style.opacity = '0';
-  ws.style.transform = 'translateY(-100%)';
-  app.classList.add('active');
-  setTimeout(() => ws.style.display = 'none', 800);
-  if (memory.length === 0) checkGreeting();
-  render();
-};
+  <!-- Client-side Logic -->
+  <script type="module">
+    import { Groq } from 'https://esm.sh/groq-sdk';
 
-function checkGreeting() {
-  if (memory.length === 0) {
-    memory.push({ role: "ai", text: "Hey! I'm Proxis. How can I assist you today?" });
-  }
-}
+    // HARDCODED GROQ API KEY HERE
+    const GROQ_API_KEY = "gsk_..."; // Put your actual Groq API key here
 
-fileInput.onchange = () => {
-  const file = fileInput.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    currentFile = { 
-      inlineData: { data: reader.result.split(',')[1], mimeType: file.type }, 
-      name: file.name, 
-      type: file.type, 
-      raw: reader.result 
-    };
-    fileNameLabel.textContent = file.name;
-    preview.style.display = "block";
-  };
-  reader.readAsDataURL(file);
-};
+    let userName = localStorage.getItem('PROXINEON_USER_NAME') || '';
 
-document.getElementById("remove-file").onclick = () => {
-  currentFile = null;
-  preview.style.display = "none";
-  fileInput.value = "";
-};
+    const getSystemPrompt = (name) => `You are Proxineon AI, an ultra-intelligent, highly intuitive, and versatile AI personal assistant built by RonzDavil Organisation.
 
-function render() {
-  messagesEl.innerHTML = "";
-  memory.forEach((m, index) => {
-    const d = document.createElement("div");
-    d.className = "msg " + m.role;
-    d.style.animationDelay = `${index * 0.05}s`;
+Your primary duty is to support, assist, and collaborate with ${name || 'Ayan'} across code architecture, system modifications, web development, and daily tasks.
 
-    if (m.file) {
-      if (m.file.type.startsWith('image/')) {
-        const img = document.createElement('img'); img.src = m.file.raw; img.className = 'file-thumb'; d.appendChild(img);
+Persona & Communication Style:
+1. Speak in a natural, friendly, humanized, and conversational tone with zero robotic fluff or dry academic filler.
+2. Use a seamless, fluent blend of English and Roman Urdu (e.g., "Bilkul tension mat lo, ye issue hum easily fix kar lenge").
+3. Adapt instantly to the user's vibe—be direct, confident, witty, and grounded.
+4. When writing code or technical breakdown, be sharp, precise, and practical. Eliminate unnecessary pleasantries before presenting solutions.`;
+
+    let messagesHistory = [
+      { role: "system", content: getSystemPrompt(userName) }
+    ];
+
+    // DOM Elements
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const messagesList = document.getElementById('messagesList');
+    const heroCard = document.getElementById('heroCard');
+    const chatContainer = document.getElementById('chatContainer');
+    const welcomeGreeting = document.getElementById('welcomeGreeting');
+
+    // Modals & Inputs
+    const onboardingModal = document.getElementById('onboardingModal');
+    const userNameInput = document.getElementById('userNameInput');
+    const saveNameBtn = document.getElementById('saveNameBtn');
+
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettings = document.getElementById('closeSettings');
+    const saveSettings = document.getElementById('saveSettings');
+    const settingsNameInput = document.getElementById('settingsNameInput');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+
+    // Onboarding Check
+    function checkUserOnboarding() {
+      if (!userName) {
+        onboardingModal.classList.remove('hidden');
       } else {
-        const p = document.createElement('div'); p.className = 'file-pill'; p.innerHTML = `📎 ${m.file.name}`; d.appendChild(p);
+        welcomeGreeting.textContent = `What's on your mind today, ${userName}?`;
       }
     }
-    const t = document.createElement('div'); t.textContent = m.text; d.appendChild(t);
-    messagesEl.appendChild(d);
-  });
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
 
-async function send() {
-  if (busy || (!input.value.trim() && !currentFile)) return;
-  const text = input.value.trim();
-  const fileToUpload = currentFile;
-  busy = true;
-  input.value = ""; currentFile = null; preview.style.display = "none"; fileInput.value = "";
-  
-  memory.push({ role: "user", text: text || "Analyze this", file: fileToUpload });
-  render();
-
-  const think = document.createElement("div");
-  think.className = "msg ai thinking";
-  think.innerHTML = `<div class="dot"></div><div class="dot"></div><div class="dot"></div>`;
-  messagesEl.appendChild(think);
-  chatBox.scrollTop = chatBox.scrollHeight;
-
-  try {
-    const parts = [];
-    if (text) parts.push({ text });
-    if (fileToUpload) parts.push({ inlineData: fileToUpload.inlineData });
-
-    // ROUTE THROUGH VERCEL SERVERLESS BACKEND
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: parts })
+    saveNameBtn.addEventListener('click', () => {
+      const enteredName = userNameInput.value.trim();
+      if (enteredName) {
+        userName = enteredName;
+        localStorage.setItem('PROXINEON_USER_NAME', userName);
+        welcomeGreeting.textContent = `What's on your mind today, ${userName}?`;
+        messagesHistory[0].content = getSystemPrompt(userName);
+        onboardingModal.classList.add('hidden');
+      }
     });
 
-    const data = await response.json();
-    think.remove();
+    // Auto-expanding textarea
+    userInput.addEventListener('input', () => {
+      userInput.style.height = 'auto';
+      userInput.style.height = `${Math.min(userInput.scrollHeight, 144)}px`;
+    });
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Server error occurred');
+    // Settings Configuration
+    settingsBtn.addEventListener('click', () => {
+      settingsNameInput.value = userName;
+      settingsModal.classList.remove('hidden');
+    });
+
+    closeSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+    saveSettings.addEventListener('click', () => {
+      const updatedName = settingsNameInput.value.trim();
+      if (updatedName) {
+        userName = updatedName;
+        localStorage.setItem('PROXINEON_USER_NAME', userName);
+        welcomeGreeting.textContent = `What's on your mind today, ${userName}?`;
+        messagesHistory[0].content = getSystemPrompt(userName);
+      }
+      settingsModal.classList.add('hidden');
+    });
+
+    clearChatBtn.addEventListener('click', () => {
+      messagesList.innerHTML = '';
+      messagesHistory = [{ role: "system", content: getSystemPrompt(userName) }];
+      if (heroCard) heroCard.style.display = 'flex';
+    });
+
+    // Code Enhancer: Wrap code blocks & Add Copy Button
+    function processCodeBlocks(container) {
+      container.querySelectorAll('pre code').forEach((block) => {
+        if (block.parentElement.classList.contains('code-container')) return;
+
+        hljs.highlightElement(block);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-container';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.innerHTML = '<i class="fa-regular fa-copy mr-1"></i> Copy';
+
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(block.innerText).then(() => {
+            copyBtn.innerHTML = '<i class="fa-solid fa-check mr-1 text-emerald-400"></i> Copied!';
+            setTimeout(() => {
+              copyBtn.innerHTML = '<i class="fa-regular fa-copy mr-1"></i> Copy';
+            }, 2000);
+          });
+        });
+
+        block.parentElement.parentNode.insertBefore(wrapper, block.parentElement);
+        wrapper.appendChild(block.parentElement);
+        wrapper.appendChild(copyBtn);
+      });
     }
 
-    memory.push({ role: "ai", text: data.text });
-  } catch (e) {
-    think.remove();
-    memory.push({ role: "ai", text: `Error: ${e.message || "Something went wrong. Please check your connection."}` });
-  }
-  localStorage.setItem("proxis_pill_v1", JSON.stringify(memory));
-  busy = false; render();
-}
+    // Render Message Container
+    function appendMessage(role, initialText = '') {
+      if (heroCard) heroCard.style.display = 'none';
 
-sendBtn.onclick = send;
-input.onkeydown = e => { if(e.key === "Enter") send(); };
-clearBtn.onclick = () => { memory = []; localStorage.removeItem("proxis_pill_v1"); checkGreeting(); render(); };
+      const isUser = role === 'user';
+      const msgWrapper = document.createElement('div');
+      msgWrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} w-full msg-animate`;
 
-if (memory.length > 0) {
-  document.getElementById('welcome-screen').style.display = 'none';
-  document.getElementById('main-app').classList.add('active');
-  render();
-}
-</script>
+      const msgContainer = document.createElement('div');
+      msgContainer.className = `flex items-start gap-3 max-w-[90%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`;
+
+      if (!isUser) {
+        const avatar = document.createElement('img');
+        avatar.src = 'ai_icon.png';
+        avatar.className = 'w-7 h-7 ai-dp border border-white/10 shrink-0 mt-0.5';
+        avatar.onerror = () => { avatar.src = 'https://api.iconify.design/lucide:bot.svg?color=%23ffffff'; };
+        msgContainer.appendChild(avatar);
+      }
+
+      const msgBubble = document.createElement('div');
+      msgBubble.className = `p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
+        isUser 
+          ? 'bg-[#2a2a2a] text-white rounded-tr-sm shadow-sm' 
+          : 'text-gray-200 selectable-text space-y-2'
+      }`;
+
+      if (isUser) {
+        msgBubble.textContent = initialText;
+      } else if (initialText) {
+        msgBubble.innerHTML = marked.parse(initialText);
+        processCodeBlocks(msgBubble);
+      } else {
+        msgBubble.innerHTML = `
+          <div class="flex items-center gap-1.5 py-1 text-gray-400">
+            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></span>
+            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></span>
+            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full typing-dot"></span>
+          </div>
+        `;
+      }
+
+      msgContainer.appendChild(msgBubble);
+      msgWrapper.appendChild(msgContainer);
+      messagesList.appendChild(msgWrapper);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      return msgBubble;
+    }
+
+    // Stream Execution
+    async function handleSend() {
+      const prompt = userInput.value.trim();
+
+      if (!prompt) return;
+
+      if (!GROQ_API_KEY || GROQ_API_KEY === "gsk_...") {
+        alert("Please set your valid Groq API key inside the script variable: const GROQ_API_KEY = '...'");
+        return;
+      }
+
+      userInput.value = '';
+      userInput.style.height = 'auto';
+      sendBtn.disabled = true;
+
+      appendMessage('user', prompt);
+      messagesHistory.push({ role: 'user', content: prompt });
+
+      const assistantBubble = appendMessage('assistant', '');
+
+      try {
+        const groq = new Groq({ 
+          apiKey: GROQ_API_KEY,
+          dangerouslyAllowBrowser: true 
+        });
+
+        const chatCompletion = await groq.chat.completions.create({
+          messages: messagesHistory,
+          model: "openai/gpt-oss-120b",
+          temperature: 0.7,
+          max_completion_tokens: 2048,
+          top_p: 1,
+          stream: true,
+          reasoning_effort: "medium",
+          stop: null,
+          tools: [
+            { type: "browser_search" },
+            { type: "code_interpreter" }
+          ]
+        });
+
+        let fullResponse = '';
+
+        for await (const chunk of chatCompletion) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          fullResponse += content;
+          
+          assistantBubble.innerHTML = marked.parse(fullResponse);
+          processCodeBlocks(assistantBubble);
+
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        messagesHistory.push({ role: 'assistant', content: fullResponse });
+
+      } catch (err) {
+        assistantBubble.textContent = `Error: ${err.message || 'Execution failed.'}`;
+        assistantBubble.classList.add('text-rose-400');
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+
+    // Initialize Onboarding
+    checkUserOnboarding();
+  </script>
 </body>
 </html>
-
